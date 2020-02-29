@@ -1,0 +1,116 @@
+---
+title: "Adv Data Mining and Analytics - Assignment 1"
+author: "msasnur@kent.edu"
+date: "28/02/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+Initializing all the required libraries.
+
+```{r}
+library(ISLR)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+```
+
+Assigning Carseats Dataset to safeBabies Variable by selecting only Sales, Price, and Shelf Location columns.
+
+```{r}
+safeBabies <- Carseats %>% select("Sales", "Price", "ShelveLoc")
+```
+
+Splitting dataset into three parts based on Shelf Location
+
+```{r}
+good <- filter(safeBabies,ShelveLoc == 'Good')
+medium <- filter(safeBabies,ShelveLoc == 'Medium')
+bad <- filter(safeBabies,ShelveLoc == 'Bad')
+```
+
+Question 1:
+
+Building Linear Regression model between Sales(dependent) and Price(independent) for Good Shelf Location.
+
+```{r}
+good_ordered <- good[order(good$Price),]
+model_1 <- lm(Sales ~ Price, data = good_ordered)
+summary(model_1)
+```
+
+Finding out optimal price for Good Shelf Location by subsituting values obtained from above regression model in the following equation. 
+
+```{r}
+good_optimal_price = (-0.065785 *55 - 17.968864)/(2 * -0.065785)
+print(good_optimal_price)
+```
+
+Varying production cost from $40 to $85, to find optimal price 
+
+```{r}
+result <- vector("numeric", 40)
+for(cost in 40:86) {
+  good_optimized_result <- (-0.065785 *cost - 17.968864)/(2 * -0.065785)
+  result[cost - 40] <- good_optimized_result
+}
+```
+
+Using cbind to create dataframe by binding Optimized price and change in cost. Naming the columns accordingly.
+
+```{r}
+price<- c(40:85)
+good_optimized_price<-cbind.data.frame(result,price)
+names(good_optimized_price)<-c('Optimized_Price','Change_in_Cost')
+```
+
+Question 2
+
+Similar to above solution for 1st question. Repeating all the codes for Bad Shelf Location to find optimal price. 
+
+```{r}
+bad_ordered<-bad[order(bad$Price),]
+model_2 <- lm(Sales ~ Price, data = bad_ordered)
+summary(model_2)
+
+bad_optimal_price = (-0.05522 * 55 - 11.832984) / (2 * -0.05522)
+print(bad_optimal_price)
+
+result_1 <- vector("numeric", 40)
+for(cost in 40:86) {
+  bad_optimized_result <- (-0.05522 *cost - 11.832984)/(2 * -0.05522)
+  result_1[cost - 40] <- bad_optimized_result
+}
+
+bad_optimized_price<-cbind.data.frame(result_1,price)
+names(bad_optimized_price)<-c('Optimized_Price','Change_in_Cost')
+```
+
+Plotting above two results and comparing them to see the variations in optimal price using ggplot
+
+```{r}
+plot_good <- ggplot(good_optimized_price, aes(Optimized_Price, Change_in_Cost, colour='Good location')) +
+             labs(title = 'Optimized Price varying with cost',x='Optimized Price',y='Cost') +
+             geom_line() +
+             scale_color_manual("", values = ("Good Price" = "red")) +
+             geom_point(colour='black')
+
+plot_bad <- ggplot(bad_optimized_price, aes(Optimized_Price, Change_in_Cost, colour='Bad location')) +
+            labs(x='Optimized price',y='Cost') +
+            geom_line() +
+            scale_color_manual("", values = ("Bad Price" = "blue")) +
+            geom_point(colour='black')
+```
+
+Using GridExtra library to display the plots together.
+
+```{r}
+grid.arrange(plot_good, plot_bad, ncol=1)
+```
+
+We have obtained optimal price to sell carseats when production cost is $55 
+- for good shelf location as 164.07
+- for bad shelf location as 134.64
+
+Looking at the graph we can observe that optimal price varies from $120 to $150 for Bad shelf location and from $150 to $180 for good shelf location when we vary production cost from $40 to $85
